@@ -1,11 +1,24 @@
 import configparser
 import tkinter
+import tkinter.messagebox
 
 
 def create_or_get_config():
     config = configparser.ConfigParser()
     config.read('config.ini')
     return config
+
+
+def check_config():
+    config = create_or_get_config()
+    value_1 = config['OPTIONS']['audiovideo']
+    value_2 = config['OPTIONS']['video']
+    if value_1 == 'True' and value_2 == 'True':
+        tkinter.messagebox.showinfo(
+            'Выбраны оба параметра',
+            'Выберите только один'
+        )
+        raise SystemExit
 
 
 def save_options(
