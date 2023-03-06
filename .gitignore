@@ -12,6 +12,7 @@ config.ini
 
 develop-eggs/
 downloads/
+some/
 eggs/
 .eggs/
 lib/

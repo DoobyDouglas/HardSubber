@@ -6,15 +6,30 @@ import os
 
 
 def choice_files():
-    video = filedialog.askopenfilename(title='Выберите видео')
-    filename = os.path.basename(video)
-    video_ext = os.path.splitext(video)[-1]
-    folder = video.replace(filename, '')
-    os.rename(video, folder + 'video' + video_ext)
-    subs = filedialog.askopenfilename(title='Выберите субтитры')
-    filename = os.path.basename(subs)
-    subs_ext = os.path.splitext(subs)[-1]
-    os.rename(subs, folder + 'subs' + subs_ext)
+    try:
+        video = filedialog.askopenfilename(title='Выберите видео')
+        filename = os.path.basename(video)
+        video_ext = os.path.splitext(video)[-1]
+        folder = video.replace(filename, '')
+        os.rename(video, folder + 'video' + video_ext)
+        subs = filedialog.askopenfilename(title='Выберите субтитры')
+        filename = os.path.basename(subs)
+        subs_ext = os.path.splitext(subs)[-1]
+        os.rename(subs, folder + 'subs' + subs_ext)
+    except PermissionError:
+        tkinter.messagebox.showinfo(
+            'Отказано в доступе',
+            f'Отказано в доступе к "{folder}". '
+            'Попробуйте воспользоваться не системным диском '
+            'или не его корневым разделом.'
+        )
+        hardsubber()
+    except OSError:
+        tkinter.messagebox.showinfo(
+            'Файлы находятся на разных дисках',
+            f'Переместите файлы "{video}" и "{subs}" на один диск.'
+        )
+        hardsubber()
     return video_ext, subs_ext, folder
 
 
@@ -32,7 +47,7 @@ def hardsubber():
         command = (
             f'{disk}: && cd {folder_path} && ffmpeg -i video{video_ext} -vf '
             f'{param}=subs{subs_ext} -vcodec libx264 -b 1500k -s 1280x720 '
-            f'-acodec aac -ab 256k new_file{video_ext}'
+            f'-acodec copy new_file{video_ext}'
         )
         subprocess.call(command, shell=True)
     value = config['OPTIONS']['video']
@@ -40,9 +55,10 @@ def hardsubber():
         command = (
             f'{disk}: && cd {folder_path} && ffmpeg -i video{video_ext} -vf '
             f'{param}=subs{subs_ext} -vcodec libx264 -b 1500k -s 1280x720 '
-            f'-acodec aac -an new_file{video_ext}'
+            f'-acodec copy -an new_file{video_ext}'
         )
         subprocess.call(command, shell=True)
+    return True
 
 
 def main():
