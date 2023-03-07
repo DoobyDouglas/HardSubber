@@ -1,21 +1,44 @@
 from Options import checkbox_window, create_or_get_config, check_config
 from tkinter import filedialog
+from typing import Tuple
 import subprocess
 import tkinter
 import os
 
 
-def choice_files():
+def name_generator(file: str, ext: str) -> str:
+    ext = ext.replace('.', '')
+    name = file.split('/')[-1]
+    name = (''.join(i for i in name if i.isalnum())).lower()
+    name = name.replace(ext, '')
+    return name
+
+
+def choice_files() -> Tuple[str]:
     try:
         video = filedialog.askopenfilename(title='Выберите видео')
         filename = os.path.basename(video)
-        video_ext = os.path.splitext(video)[-1]
         folder = video.replace(filename, '')
-        os.rename(video, folder + 'video' + video_ext)
+        video_ext = os.path.splitext(video)[-1]
+        name = name_generator(video, video_ext)
+        video_path = f'{folder}{name}{video_ext}'
+        copy = ''
+        while os.path.exists(video_path):
+            copy += 'copy'
+            video_path = f'{folder}{name}_{copy}{video_ext}'
+        os.rename(video, video_path)
+        video = os.path.basename(video_path)
         subs = filedialog.askopenfilename(title='Выберите субтитры')
         filename = os.path.basename(subs)
         subs_ext = os.path.splitext(subs)[-1]
-        os.rename(subs, folder + 'subs' + subs_ext)
+        name = name_generator(subs, subs_ext)
+        subs_path = f'{folder}{name}{subs_ext}'
+        copy = ''
+        while os.path.exists(subs_path):
+            copy += 'copy'
+            subs_path = f'{folder}{name}_{copy}{subs_ext}'
+        os.rename(subs, subs_path)
+        subs = os.path.basename(subs_path)
     except PermissionError:
         tkinter.messagebox.showinfo(
             'Отказано в доступе',
@@ -30,12 +53,12 @@ def choice_files():
             f'Переместите файлы "{video}" и "{subs}" на один диск.'
         )
         hardsubber()
-    return video_ext, subs_ext, folder
+    return video_ext, subs_ext, folder, video, subs
 
 
 def hardsubber():
     config = create_or_get_config()
-    video_ext, subs_ext, folder = choice_files()
+    video_ext, subs_ext, folder, video, subs = choice_files()
     disk = folder.split(':')[0].lower()
     folder_path = folder.split(':')[1]
     if subs_ext == '.ass':
@@ -45,16 +68,16 @@ def hardsubber():
     value = config['OPTIONS']['audiovideo']
     if value == 'True':
         command = (
-            f'{disk}: && cd {folder_path} && ffmpeg -i video{video_ext} -vf '
-            f'{param}=subs{subs_ext} -vcodec libx264 -b 1500k -s 1280x720 '
+            f'{disk}: && cd {folder_path} && ffmpeg -i {video} -vf '
+            f'{param}={subs} -vcodec libx264 -b 1500k -s 1280x720 '
             f'-acodec copy new_file{video_ext}'
         )
         subprocess.call(command, shell=True)
     value = config['OPTIONS']['video']
     if value == 'True':
         command = (
-            f'{disk}: && cd {folder_path} && ffmpeg -i video{video_ext} -vf '
-            f'{param}=subs{subs_ext} -vcodec libx264 -b 1500k -s 1280x720 '
+            f'{disk}: && cd {folder_path} && ffmpeg -i {video} -vf '
+            f'{param}={subs} -vcodec libx264 -b 1500k -s 1280x720 '
             f'-acodec copy -an new_file{video_ext}'
         )
         subprocess.call(command, shell=True)
@@ -62,6 +85,8 @@ def hardsubber():
 
 
 def main():
+    with open('pic.txt') as file:
+        print(file.read())
     checkbox_window()
     tkinter.Tk().withdraw()
     check_config()
