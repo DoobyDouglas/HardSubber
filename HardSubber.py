@@ -85,8 +85,6 @@ def hardsubber():
 
 
 def main():
-    with open('pic.txt') as file:
-        print(file.read())
     checkbox_window()
     tkinter.Tk().withdraw()
     check_config()
