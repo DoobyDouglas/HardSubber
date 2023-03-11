@@ -1,4 +1,5 @@
 from Options import checkbox_window, create_or_get_config, check_config
+from SubsEdit import subs_edit
 from tkinter import filedialog
 from typing import Tuple
 import subprocess
@@ -38,6 +39,8 @@ def choice_files() -> Tuple[str]:
             copy += 'copy'
             subs_path = f'{folder}{name}_{copy}{subs_ext}'
         os.rename(subs, subs_path)
+        if subs_ext == '.ass':
+            subs_edit(subs_path)
         subs = os.path.basename(subs_path)
     except PermissionError:
         tkinter.messagebox.showinfo(
