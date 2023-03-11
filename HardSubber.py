@@ -5,7 +5,7 @@ from typing import Tuple
 import subprocess
 import tkinter
 import os
-
+import pysubs2
 
 def name_generator(file: str, ext: str) -> str:
     ext = ext.replace('.', '')
