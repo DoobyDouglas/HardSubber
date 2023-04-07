@@ -103,6 +103,7 @@ def comparator(actor: str) -> bool:
     if (
         'text' not in actor
         and 'sign' not in actor
+        and 'надпись' not in actor
     ):
         return True
     return False
