@@ -9,19 +9,23 @@ import configparser
 import tkinter.messagebox
 
 
-def create_or_get_config():
+def create_or_get_config() -> configparser.ConfigParser:
     config = configparser.ConfigParser()
     config.read('config.ini')
     return config
 
 
-def check_config():
+def get_value(name: str) -> bool:
     config = create_or_get_config()
-    value_1 = config['OPTIONS']['audiovideo']
-    value_2 = config['OPTIONS']['video']
-    if value_1 == 'True' and value_2 == 'True':
+    if config['OPTIONS'][name] == 'True':
+        return True
+    return False
+
+
+def check_config() -> None:
+    if get_value('audiovideo') and get_value('video'):
         tkinter.messagebox.showinfo(
-            'Выбраны оба параметра',
+            'Выбраны оба параметра для выходного файла',
             'Выберите только один'
         )
         raise SystemExit
@@ -31,7 +35,7 @@ def save_options(
         checkboxes: dict,
         master: tkinter.Tk,
         config: configparser.ConfigParser
-        ):
+        ) -> None:
     for option, var in checkboxes.items():
         config['OPTIONS'][option] = str(var.get())
     with open('config.ini', 'w') as config_file:
@@ -43,7 +47,7 @@ def create_widgets(
         OPTIONS: list,
         master: tkinter.Tk,
         config: configparser.ConfigParser
-        ):
+        ) -> None:
     checkboxes = {}
     if 'OPTIONS' not in config:
         config['OPTIONS'] = {}
@@ -77,13 +81,13 @@ def create_widgets(
         pady=3,
         command=lambda: save_options(checkboxes, master, config)
     )
-    save_button.place(relx=0.5, rely=1.0, anchor="center", y=-60)
+    save_button.place(relx=0.5, rely=1.0, anchor="center", y=-65)
     master.mainloop()
 
 
-def checkbox_window():
+def checkbox_window() -> None:
     master = tkinter.Tk()
-    master.geometry('330x100')
+    master.geometry('330x125')
     master.resizable(width=False, height=False)
     master.title('Выберите нужные опции')
     img = Image.open("background.png")
@@ -94,6 +98,7 @@ def checkbox_window():
         'audiovideo',
         'video',
         'subs_extract',
+        'convert_to_mp4',
     ]
     config = create_or_get_config()
     create_widgets(OPTIONS, master, config)
@@ -146,7 +151,7 @@ def name_generator(file: str, ext: str) -> str:
     return name
 
 
-def choice_files(config) -> Tuple[str, str, str, str, str]:
+def choice_files() -> Tuple[str, str, str, str, str]:
     try:
         video = filedialog.askopenfilename(title='Выберите видео')
         filename = os.path.basename(video)
@@ -160,8 +165,7 @@ def choice_files(config) -> Tuple[str, str, str, str, str]:
             video_path = f'{folder}{name}_{copy}{video_ext}'
         os.rename(video, video_path)
         video = os.path.basename(video_path)
-        value = config['OPTIONS']['subs_extract']
-        if value == 'True':
+        if get_value('subs_extract') and video_ext == '.mkv':
             subs_path = subs_extract(video_path, folder)
             subs_ext = '.ass'
         else:
@@ -194,20 +198,19 @@ def choice_files(config) -> Tuple[str, str, str, str, str]:
 
 
 def hardsubber() -> None:
-    config = create_or_get_config()
-    video_ext, subs_ext, folder, video, subs = choice_files(config)
+    video_ext, subs_ext, folder, video, subs = choice_files()
     disk = folder.split(':')[0].lower()
     folder_path = folder.split(':')[1]
     if subs_ext == '.ass':
         param = 'ass'
     else:
         param = 'subtitles'
-    value_av = config['OPTIONS']['audiovideo']
-    value_v = config['OPTIONS']['video']
-    if value_av == 'True':
+    if get_value('audiovideo'):
         sound_param = ' '
-    elif value_v == 'True':
+    elif get_value('video'):
         sound_param = ' -an '
+    if get_value('convert_to_mp4'):
+        video_ext = '.mp4'
     command = (
         f'{disk}: && cd {folder_path} && ffmpeg -i {video} -vf '
         f'{param}={subs} -vcodec libx264 -b 1500k -s 1280x720 '
