@@ -104,12 +104,16 @@ def checkbox_window() -> None:
     create_widgets(OPTIONS, master, config)
 
 
-def comparator(actor: str) -> bool:
+def comparator(sub: str) -> bool:
     if (
-        'text' not in actor
-        and 'sign' not in actor
-        and 'надпись' not in actor
-        and 'caption' not in actor
+        'text' not in sub
+        and 'sign' not in sub
+        and 'надпись' not in sub
+        and 'caption' not in sub
+        and 'title' not in sub
+        and 'song' not in sub
+        and 'screen' not in sub
+        and 'typedigital' not in sub
     ):
         return True
     return False
@@ -128,10 +132,18 @@ def subs_extract(video_path, folder) -> str:
 
 def subs_edit(path: str) -> None:
     subs = pysubs2.load(path)
-    if subs.events[0].name:
-        to_delete = []
+    to_delete = []
+    if subs.events[0].name and subs.events[0].style:
+        for i, sub in enumerate(subs.events):
+            if comparator(sub.name.lower()) or comparator(sub.style.lower()):
+                to_delete.append(i)
+    elif subs.events[0].name:
         for i, sub in enumerate(subs.events):
             if comparator(sub.name.lower()):
+                to_delete.append(i)
+    elif subs.events[0].style:
+        for i, sub in enumerate(subs.events):
+            if comparator(sub.style.lower()):
                 to_delete.append(i)
     else:
         search_char = '{'

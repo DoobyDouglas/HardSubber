@@ -9,7 +9,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 config.ini
-
+some.py
 develop-eggs/
 downloads/
 some/
