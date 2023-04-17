@@ -106,14 +106,16 @@ def checkbox_window() -> None:
 
 def comparator(sub: str) -> bool:
     if (
-        'text' not in sub
-        and 'sign' not in sub
-        and 'надпись' not in sub
-        and 'caption' not in sub
-        and 'title' not in sub
-        and 'song' not in sub
-        and 'screen' not in sub
-        and 'typedigital' not in sub
+        (
+            'text' not in sub
+            and 'sign' not in sub
+            and 'надпись' not in sub
+            and 'caption' not in sub
+            and 'title' not in sub
+            and 'song' not in sub
+            and 'screen' not in sub
+            and 'typedigital' not in sub
+        ) or 'subtitle' in sub
     ):
         return True
     return False
@@ -133,20 +135,22 @@ def subs_extract(video_path, folder) -> str:
 def subs_edit(path: str) -> None:
     subs = pysubs2.load(path)
     to_delete = []
+    search_char = '{'
     if subs.events[0].name and subs.events[0].style:
         for i, sub in enumerate(subs.events):
-            if comparator(sub.name.lower()) or comparator(sub.style.lower()):
+            if (
+                comparator(sub.name.lower()) or comparator(sub.style.lower())
+            ) and search_char not in sub.text:
                 to_delete.append(i)
     elif subs.events[0].name:
         for i, sub in enumerate(subs.events):
-            if comparator(sub.name.lower()):
+            if comparator(sub.name.lower()) and search_char not in sub.text:
                 to_delete.append(i)
     elif subs.events[0].style:
         for i, sub in enumerate(subs.events):
-            if comparator(sub.style.lower()):
+            if comparator(sub.style.lower()) and search_char not in sub.text:
                 to_delete.append(i)
     else:
-        search_char = '{'
         to_delete = [
             i for i, line in enumerate(subs) if search_char not in line.text
         ]
