@@ -119,7 +119,7 @@ config = get_config()
 master = tkinter.Tk(className='HARDSUBBER.main')
 master.geometry(set_geometry(master))
 master.resizable(False, False)
-master.title('HARDSUBBER v1.77')
+master.title('HARDSUBBER v1.78')
 master.iconbitmap(default=resource_path('ico.ico'))
 img = Image.open(resource_path('background.png'))
 raw_img = ImageTk.PhotoImage(img)
@@ -226,4 +226,5 @@ progressbar = ttk.Progressbar(
 progressbar.place(relx=0.5, rely=1.0, anchor="center", y=-21, x=-31)
 
 if __name__ == '__main__':
+    master.focus_force()
     master.mainloop()
