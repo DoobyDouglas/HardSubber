@@ -8,6 +8,8 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+HARDSUBBER.ini
+subs_langs.json
 config.ini
 some_files/
 develop-eggs/
