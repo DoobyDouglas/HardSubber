@@ -1,9 +1,10 @@
+# pyinstaller --noconfirm --onefile --noconsole --add-data 'background.png;.' --add-data 'ico.ico;.' --icon=ico.ico HardSubber.py
 from PIL import Image, ImageTk
 from typing import Dict
-import subprocess
 import tkinter
 import os
 import pysubs2
+import ffmpeg
 import tkinter.messagebox
 from threading import Thread
 import sys
@@ -20,7 +21,6 @@ from configs import (
 from fileworks import choice_files
 from tktooltip import ToolTip
 from helptexts import HELP_DICT
-# pyinstaller --noconfirm --onefile --noconsole --add-data 'background.png;.' --add-data 'ico.ico;.' --icon=ico.ico HardSubber.py
 
 
 def hardsubber(master: tkinter.Tk) -> None:
@@ -29,36 +29,36 @@ def hardsubber(master: tkinter.Tk) -> None:
     video_ext, subs_ext, folder, video, subs = choice_files(master)
     if video_ext and subs_ext and folder and video and subs:
         master.nametowidget('pb').start()
+        video_file = ffmpeg.input(f'{folder}{video}')
         disk = folder.split(':')[0].lower()
         folder_path = folder.split(':')[1]
+        options = {'vcodec': 'libx264'}
+        output_steams = [video_file['v']]
         if subs_ext == '.ass':
             param = 'ass'
         else:
             param = 'subtitles'
+        options['vf'] = f"{param}='{disk}\:{folder_path}{subs}'"
         if get_value('audio'):
-            sound_param = ' '
-        else:
-            sound_param = ' -an '
+            options['acodec'] = 'copy'
+            output_steams.append(video_file['a'])
         if config['OPTIONS']['bitrate']:
-            bitrate = f" -b {config['OPTIONS']['bitrate']}k "
-        else:
-            bitrate = ' '
+            options['video_bitrate'] = f"{config['OPTIONS']['bitrate']}k"
         if config['OPTIONS']['resolution'] != 'ORIGINAL':
-            resolution = f" -s {config['OPTIONS']['resolution']} "
-        else:
-            resolution = ' '
+            options['s'] = f"{config['OPTIONS']['resolution']}"
         if get_value('convert_to_mp4'):
             video_ext = '.mp4'
-        outputname = 'HRDSBBD_' + os.path.splitext(video)[0]
-        command = (
-            f'{disk}: && cd {folder_path} && ffmpeg -i {video} -vf '
-            f'{param}={subs} -vcodec libx264'
-            f'{bitrate}{resolution}'
-            f'-acodec copy{sound_param}{outputname}{video_ext}'
+        output = f'{folder}HRDSBBD_{os.path.splitext(video)[0]}{video_ext}'
+        output = ffmpeg.output(
+            *output_steams,
+            output,
+            **options,
         )
-        subprocess.call(command, shell=True)
+        ffmpeg.run(output)
+        os.remove(f'{folder}{subs}')
         master.nametowidget('pb').stop()
     master.nametowidget('start').config(state='normal')
+    master.wm_attributes('-topmost', 1)
 
 
 def main(checkboxes: Dict, master: tkinter.Tk) -> None:
@@ -119,7 +119,7 @@ config = get_config()
 master = tkinter.Tk(className='HARDSUBBER.main')
 master.geometry(set_geometry(master))
 master.resizable(False, False)
-master.title('HARDSUBBER v1.79')
+master.title('HARDSUBBER v1.81')
 master.iconbitmap(default=resource_path('ico.ico'))
 img = Image.open(resource_path('background.png'))
 raw_img = ImageTk.PhotoImage(img)

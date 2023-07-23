@@ -1,11 +1,12 @@
 from tkinter import filedialog
 from typing import Tuple
-import subprocess
+import ffmpeg
 import tkinter
 import os
 import pysubs2
 import tkinter.messagebox
 from configs import get_value, get_config, SUBS_LANGS_DICT
+from ffmpeg._run import Error
 
 
 def comparator(sub: str) -> bool:
@@ -26,43 +27,41 @@ def comparator(sub: str) -> bool:
 
 def subs_extract(video_path, folder, master) -> str or None:
     lang = SUBS_LANGS_DICT[get_config()['OPTIONS']['subs_lang']]
+    input_file = ffmpeg.input(video_path)
     subs_path = f'{folder}subs.ass'
     copy = ''
     while os.path.exists(subs_path):
         copy += 'copy'
         subs_path = f'{folder}subs_{copy}.ass'
-    command = (
-        f'ffmpeg -i "{video_path}" '
-        f'-map 0:s:m:language:{lang} "{subs_path}"'
-    )
     master.nametowidget('pb').start()
-    subprocess.call(command, shell=True)
-    master.nametowidget('pb').stop()
-    if os.path.exists(subs_path):
+    try:
+        output = ffmpeg.output(
+            input_file, subs_path, map=f'0:s:m:language:{lang}'
+        )
+        ffmpeg.run(output)
+        master.nametowidget('pb').stop()
         return subs_path
-    tkinter.messagebox.showerror(
-        'Нет субтитров',
-        'Выбранного языка субтитров нет в видео.'
-    )
-    return None
+    except Error:
+        master.nametowidget('pb').stop()
+        tkinter.messagebox.showerror(
+            'Нет субтитров',
+            'Выбранного языка субтитров нет в видео.'
+        )
+        return None
 
 
 def subs_edit(path: str) -> None:
     subs = pysubs2.load(path)
     to_delete = []
-    search_char = '{'
-    if subs.events[0].name:
-        for i, sub in enumerate(subs.events):
-            if comparator(sub.name.lower()) and search_char not in sub.text:
-                to_delete.append(i)
-    if subs.events[0].style:
-        for i, sub in enumerate(subs.events):
-            if comparator(sub.style.lower()) and search_char not in sub.text:
-                if i not in to_delete:
-                    to_delete.append(i)
-    else:
+    char = '{'
+    for i, sub in enumerate(subs.events):
+        if comparator(sub.name.lower()):
+            to_delete.append(i)
+        elif comparator(sub.name.lower()):
+            to_delete.append(i)
+    if len(to_delete) == len(subs.events):
         to_delete = [
-            i for i, line in enumerate(subs) if search_char not in line.text
+            i for i, sub in enumerate(subs.events) if char not in sub.text
         ]
     to_delete.sort()
     for i in reversed(to_delete):
